@@ -1,0 +1,115 @@
+import numpy as np
+import pandas as pd
+import time
+
+def MensajeBienvenida():
+    print("\t\t\t..................................")
+    print("\t\t\t     _    _  _____    _____ ")
+    print("\t\t\t    | |  | ||  __ \  / ____|")
+    print("\t\t\t    | |  | || |) || |     ")
+    print("\t\t\t    | |  | ||  ___/ | |     ")
+    print("\t\t\t    | || || |     | |____ ")
+    print("\t\t\t     \/ ||      \|")
+    print("\t\t\t..................................")
+def TituloPrincipal():
+    print("\t\t\t--------------")
+    print("\t\t\t| BIENVENIDO |")
+    print("\t\t\t--------------")
+
+def TituloOpcion1():
+    print("\t\t\t----------------------------------------------------------------------")
+    print("\t\t\t| ESTACIONES EN LAS CUALES ESTUVO UNA BICICLETA LOS ULTIMOS 30 DIAS  |")
+    print("\t\t\t----------------------------------------------------------------------")
+def MenuOpciones1():
+    print("\n\n\n")
+    TituloPrincipal()
+    print("Seleccione una opcion:")
+    print("1.- Iniciar programa")
+    print("2.- Salir del sistema")
+
+def CrearMatrizConValoresAleatorios():
+    # Crear una matriz de 140x30 con números aleatorios del 1 al 12
+    Matriz = np.random.randint(1, 13, size=(140, 30))
+    return Matriz
+def ImprimirMatriz(Matriz):
+    print("\n\n\n")
+    TituloOpcion1()
+    print("\n")
+    # Agregar la letra "E" a cada elemento
+    MatrizParaImprimir = np.char.add('E', Matriz.astype(str))
+
+    # Crear un DataFrame con la matriz modificada
+    df = pd.DataFrame(MatrizParaImprimir)
+    df.index = ['B' + str(i+1) for i in range(140)]
+    df.columns = ['| Día ' + str(i+1) for i in range(30)]
+
+    # Imprimir el DataFrame
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
+    print(df)
+def EjecutarOpcion1(Verificador):
+    Matriz = CrearMatrizConValoresAleatorios()
+    ImprimirMatriz(Matriz)
+    time.sleep(5)
+    print("\n\n\n")
+    while Verificador:
+        print("\n")
+        print("Desea volver a la pantalla principal?")
+        print("1. Si")
+        print("No digitar nada. Esperar")
+        while True:
+            try:
+                Opcion = int(input("Digite su opcion: "))
+                break
+            except ValueError:
+                print("Ingrese un número entero válido evite poner simbolos o letras ya que no son necesarios")
+                print(" ")
+
+        # If para poder ejecutar las diferentes funciones
+        if Opcion == 1:
+            Verificador = False
+            print("Volviendo a la pagina principal")
+            time.sleep(2)
+
+        else:
+            print("Opción no válida. Intente nuevamente digitando una de las opciones dadas.")
+            time.sleep(1)
+        print("\n\n\n")
+
+def main():
+    #Titulos
+    MensajeBienvenida()
+    time.sleep(3)
+    print("\n\n\n")
+    Verificador = True
+
+    while Verificador:
+        print("\n\n")
+        MenuOpciones1()
+        while True:
+            try:
+                Opcion = int(input("Digite su opcion: "))
+                break
+            except ValueError:
+                print("Ingrese un número entero válido evite poner simbolos o letras ya que no son necesarios")
+                print("\n")
+
+        # Opciones
+        if Opcion == 1:
+            Verificador = True
+            print("\n\n\n")
+            EjecutarOpcion1(Verificador)
+
+        # Opcion para salir del sistema
+        elif Opcion == 2:
+            Verificador = False
+            print("Saliendo del sistema. ¡Hasta luego!")
+            break
+
+        else:
+            print("Opción no válida. Intente nuevamente digitando una de las opciones dadas.")
+            print("\n")
+            time.sleep(1)
+
+if _name_ == "_main_":
+    main()
