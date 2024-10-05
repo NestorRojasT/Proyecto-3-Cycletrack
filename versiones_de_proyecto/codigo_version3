@@ -1,0 +1,210 @@
+import numpy as np
+import pandas as pd
+import tkinter as tk
+from tkinter import scrolledtext
+from PIL import Image, ImageTk
+
+# Función para crear e imprimir matriz con números aleatorios
+def CrearMatrizConValoresAleatorios():
+    Matriz = np.random.randint(1, 13, size=(140, 30))
+    return Matriz
+
+# Función para contar las estaciones
+def ContadorDeEstaciones(matriz, text_widget):
+    text_widget.insert(tk.END, "Número de veces que fue ocupada cada estación:\n")
+    for num in range(1, 13):
+        count = np.count_nonzero(matriz == num)
+        text_widget.insert(tk.END, f"Estación {num}: {count}\n")
+
+# Función para crear matriz de transición
+def CrearMatrizDeTransicion(matriz):
+    transiciones = np.zeros((12, 12))
+    for dia in range(matriz.shape[1] - 1):
+        for bicicleta in range(matriz.shape[0]):
+            estacion_inicial = matriz[bicicleta, dia] - 1
+            estacion_final = matriz[bicicleta, dia + 1] - 1
+            transiciones[estacion_inicial, estacion_final] += 1
+
+    suma_filas = transiciones.sum(axis=1, keepdims=True)
+    matriz_transicion = np.divide(transiciones, suma_filas, where=suma_filas != 0)
+
+    return matriz_transicion
+
+def ImprimirMatriz(Matriz, text_widget):
+    text_widget.insert(tk.END, "\n\n")
+    text_widget.insert(tk.END, "Estaciones en las cuales estuvo una bicicleta los últimos 30 días\n")
+
+    MatrizParaImprimir = np.char.add('E', Matriz.astype(str))
+    df = pd.DataFrame(MatrizParaImprimir)
+    df.index = ['B' + str(i + 1) for i in range(140)]
+
+    bloques_dias = [(0, 8), (8, 16), (16, 24), (24, 30)]
+    for inicio, fin in bloques_dias:
+        df_bloque = df.iloc[:, inicio:fin]
+        df_bloque.columns = [f"| Día {i + 1}" for i in range(inicio, fin)]
+        text_widget.insert(tk.END, df_bloque.to_string())
+        text_widget.insert(tk.END, "\n\n")
+
+def ProbabilidadDespuesDe2Dias(matriz_transicion, text_widget):
+    for i in range(12):
+        text_widget.insert(tk.END,
+                           f"\nProbabilidad de estar en cualquier estación después de 2 días, empezando en la estación {i + 1}:\n\n")
+
+        vector_inicial = np.zeros(12)
+        vector_inicial[i] = 1
+
+        prob_2dias = np.linalg.matrix_power(matriz_transicion, 2).dot(vector_inicial)
+
+        for start in range(0, 12, 4):
+            end = start + 4
+
+            estaciones_header = " | ".join([f"Estacion {j + 1:2}" for j in range(start, min(end, 12))])
+            text_widget.insert(tk.END, f"     {estaciones_header}\n")
+            probabilidades = " | ".join([f"{prob:10.5f}" for prob in prob_2dias[start:end]])
+            text_widget.insert(tk.END, f"Dia 2 {probabilidades}\n")
+
+        text_widget.insert(tk.END, "\n")
+
+def DistribucionEstacionaria(matriz_transicion, text_widget):
+    estacionaria = np.linalg.matrix_power(matriz_transicion, 1000)[0]
+    text_widget.insert(tk.END, "Distribución Estacionaria (probabilidad a largo plazo de estar en cada estación):\n\n")
+
+    for start in range(0, 12, 3):
+        end = start + 3
+        estaciones_header = " | ".join([f"Estacion {j + 1:2}" for j in range(start, min(end, 12))])
+        text_widget.insert(tk.END, f"{' ' * 29}| {estaciones_header} |\n")
+        probabilidades = " | ".join([f"{prob:10.5f}" for prob in estacionaria[start:end]])
+        text_widget.insert(tk.END, f"Probabilidad a largo plazo{' ' * 6}{probabilidades}\n\n")
+
+def ImprimirEnGrupos(matriz, text_widget, titulo, tam_bloque=4):
+    text_widget.insert(tk.END, f"\n{titulo}\n\n")
+    df = pd.DataFrame(matriz)
+    df.index = ['Estación ' + str(i + 1) for i in range(len(matriz))]
+    df.columns = ['| Estación ' + str(i + 1) for i in range(len(matriz[0]))]
+
+    for inicio in range(0, len(df.columns), tam_bloque):
+        fin = min(inicio + tam_bloque, len(df.columns))
+        df_bloque = df.iloc[:, inicio:fin]
+        text_widget.insert(tk.END, df_bloque.to_string())
+        text_widget.insert(tk.END, "\n\n")
+
+def EjecutarOpcion1(text_widget):
+    Matriz = CrearMatrizConValoresAleatorios()
+    ImprimirMatriz(Matriz, text_widget)
+    text_widget.insert(tk.END, "\n")
+
+    ContadorDeEstaciones(Matriz, text_widget)
+    text_widget.insert(tk.END, "\n")
+    matriz_transicion = CrearMatrizDeTransicion(Matriz)
+
+    ImprimirEnGrupos(matriz_transicion, text_widget,
+                     "Matriz de transición (probabilidades de ir de una estación a otra):")
+    ProbabilidadDespuesDe2Dias(matriz_transicion, text_widget)
+    DistribucionEstacionaria(matriz_transicion, text_widget)
+
+def mostrar_menu_inicial():
+    for widget in ventana.winfo_children():
+        widget.destroy()
+
+    imagen_logo = Image.open(r"C:\Users\Luis Alberto\Desktop\ProyectoMateDisc\UPCLogo.png")
+    imagen_logo = imagen_logo.resize((200, 100))
+    logo_img = ImageTk.PhotoImage(imagen_logo)
+
+    frame_logo = tk.Frame(ventana)
+    frame_logo.pack(side="top", anchor="w", padx=10, pady=10)
+
+    label_logo = tk.Label(frame_logo, image=logo_img)
+    label_logo.image = logo_img
+    label_logo.pack()
+
+    titulo_bienvenida = tk.Label(ventana, text="Bienvenido a CycleTrack", font=("Arial", 24), fg="#344A5E")
+    titulo_bienvenida.pack(pady=20)
+
+    frame_botones = tk.Frame(ventana)
+    frame_botones.pack(pady=20)
+
+    btn_iniciar = tk.Button(frame_botones, text="Iniciar el programa", font=("Courier", 14), command=mostrar_ejecucion,
+                            bg="#4DB6AC", fg="white", activebackground="lightblue", activeforeground="black")
+    btn_iniciar.grid(row=0, column=0, padx=10)
+
+    btn_salir = tk.Button(frame_botones, text="Salir del sistema", font=("Courier", 14), command=mostrar_mensaje_salir,
+                          bg="#4DB6AC", fg="white", activebackground="lightblue", activeforeground="black")
+    btn_salir.grid(row=0, column=1, padx=10)
+
+    imagen_bici = Image.open(r"C:\Users\Luis Alberto\Desktop\ProyectoMateDisc\Bicicleta.png")
+    imagen_bici = imagen_bici.resize((300, 200))
+    bici_img = ImageTk.PhotoImage(imagen_bici)
+
+    frame_imagen = tk.Frame(ventana)
+    frame_imagen.pack(pady=20)
+
+    label_imagen = tk.Label(frame_imagen, image=bici_img)
+    label_imagen.image = bici_img
+    label_imagen.pack()
+
+def mostrar_ejecucion():
+    for widget in ventana.winfo_children():
+        widget.destroy()
+
+    frame_texto = tk.Frame(ventana)
+    frame_texto.pack(pady=10)
+
+    text_area = scrolledtext.ScrolledText(frame_texto, wrap=tk.WORD, width=100, height=30, font=("Courier", 10))
+    text_area.pack()
+
+    EjecutarOpcion1(text_area)
+
+    frame_volver = tk.Frame(ventana)
+    frame_volver.pack(pady=10)
+
+    btn_volver_menu = tk.Button(frame_volver, text="Volver al Menú", font=("Courier", 14), command=mostrar_menu_inicial,
+                                bg="#4DB6AC", fg="white", activebackground="lightblue", activeforeground="black")
+    btn_volver_menu.pack(pady=10)
+
+def mostrar_mensaje_salir():
+    ventana.withdraw()
+
+    ventana_salir = tk.Toplevel()
+    ventana_salir.title("Gracias")
+    ventana_salir.geometry("800x600")
+
+    imagen_logo = Image.open(r"C:\Users\Luis Alberto\Desktop\ProyectoMateDisc\UPCLogo.png")
+    imagen_logo = imagen_logo.resize((200, 100))
+    logo_img = ImageTk.PhotoImage(imagen_logo)
+
+    frame_logo = tk.Frame(ventana_salir)
+    frame_logo.pack(side="top", anchor="w", padx=10, pady=10)
+
+    label_logo = tk.Label(frame_logo, image=logo_img)
+    label_logo.image = logo_img
+    label_logo.pack()
+
+    mensaje = tk.Label(ventana_salir, text="Gracias por usar CycleTrack", font=("Arial", 24), fg="#344A5E")
+    mensaje.pack(pady=20)
+
+    imagen_bici = Image.open(r"C:\Users\Luis Alberto\Desktop\ProyectoMateDisc\Bicicleta.png")
+    imagen_bici = imagen_bici.resize((300, 200))
+    bici_img = ImageTk.PhotoImage(imagen_bici)
+
+    frame_imagen = tk.Frame(ventana_salir)
+    frame_imagen.pack(pady=20)
+
+    label_imagen = tk.Label(frame_imagen, image=bici_img)
+    label_imagen.image = bici_img
+    label_imagen.pack()
+
+    ventana_salir.after(3000, lambda: cerrar_aplicacion(ventana_salir))
+
+def cerrar_aplicacion(ventana_salir):
+    ventana_salir.destroy()
+    ventana.quit()
+
+# Configuración de la ventana principal
+ventana = tk.Tk()
+ventana.title("TP")
+ventana.geometry("800x600")
+
+# Mostrar el menú inicial
+mostrar_menu_inicial()
+
+ventana.mainloop()
